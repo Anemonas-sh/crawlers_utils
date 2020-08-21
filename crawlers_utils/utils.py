@@ -37,5 +37,3 @@ def create_compressed_folder(output_path: str = None, filename: str = None, comp
     """
     
     return make_archive(base_name=output_path + filename, format=compression_type, base_dir=base_dir)
-
-create_compressed_folder(base_name="/home/francamacdowell/Workspace/DataTour/crawlers_utils/", filename="test", base_dir="/home/francamacdowell/Downloads/books")
