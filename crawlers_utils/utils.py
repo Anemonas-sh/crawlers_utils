@@ -3,7 +3,7 @@ import glob
 import posixpath
 from googleapiclient import discovery
 from google.cloud import storage
-
+from shutil import make_archive
 
 def connect_to_storage(bucket_name):
     storage_client = storage.Client()
@@ -22,3 +22,18 @@ def upload_folder_to_bucket(bucket, local_path, bucket_path, recursive_upload=Tr
             blob = bucket.blob(remote_path)
             print('sent {}'.format(local_file.split("/")[-1]))
             blob.upload_from_filename(local_file)
+
+
+def create_compressed_folder(output_path: str = None, filename: str = None, compression_type="zip", base_dir: str = None):
+    """
+    base_dir: is the directory where we start archiving from
+    compression_type can be:  “zip” (if the zlib module is available),
+                                “tar”,
+                                “gztar” (if the zlib module is available),
+                                “bztar” (if the bz2 module is available), or
+                                “xztar"
+                                
+    return: function returns the full path where archived/compressed folder was placed
+    """
+    
+    return make_archive(base_name=output_path + filename, format=compression_type, base_dir=base_dir)
