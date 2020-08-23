@@ -6,6 +6,7 @@ from googleapiclient import discovery
 from google.cloud import storage
 from shutil import make_archive
 
+
 def save_file(file_path, data, bucket=None):
     with open(file_path, "w", encoding="utf-8") as f:
         print(json.dumps(data, ensure_ascii=False), file=f)
@@ -24,7 +25,6 @@ def connect_to_storage(bucket_name):
 def upload_folder_to_bucket(bucket, local_path, bucket_path):
     blob = bucket.blob(bucket_path)
     blob.upload_from_filename(local_path)
-
 
 
 def download_blob_from_bucket(bucket_name, bucket_path, source_name, path_to_save):
