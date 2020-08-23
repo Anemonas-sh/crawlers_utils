@@ -1,10 +1,37 @@
 import os
+import sys
 import glob
 import posixpath
 import json
 from googleapiclient import discovery
 from google.cloud import storage
 from shutil import make_archive
+from datetime import datetime
+from .constants import date_format
+
+
+def get_args():
+    arguments = sys.argv
+    start_date, end_date, debug = None, None, False
+    try:
+        for i in range(len(arguments)):
+            if arguments[i] == "--start-date":
+                start_date = datetime.strptime(arguments[i + 1], "%m-%d-%Y")
+            if arguments[i] == "--end-date":
+                end_date = datetime.strptime(arguments[i + 1], "%m-%d-%Y")
+            if arguments[i] == "--debug":
+                debug = True
+        if start_date is None or end_date is None:
+            raise ValueError(start_date, end_date)
+    except Exception as e:
+        print("Couldn't get arguments", e)
+        exit(0)
+    return start_date, end_date, debug
+
+
+def get_output_folder(start_date, end_date):
+    now, start, end = datetime.now().strftime(date_format), start_date.strftime(date_format), end_date.strftime(date_format)
+    return posixpath.join('google_output', "%s_%s_%s" % (now, start, end))
 
 
 def save_file(file_path, data, bucket=None):
