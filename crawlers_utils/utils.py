@@ -29,9 +29,9 @@ def get_args():
     return start_date, end_date, debug
 
 
-def get_output_folder(start_date, end_date):
+def get_output_folder(start_date, end_date, crawler_name):
     now, start, end = datetime.now().strftime(date_format), start_date.strftime(date_format), end_date.strftime(date_format)
-    return posixpath.join('google_output', "%s_%s_%s" % (now, start, end))
+    return posixpath.join(crawler_name, "%s_%s_%s" % (now, start, end))
 
 
 def save_file(file_path, data, bucket=None):
@@ -92,3 +92,8 @@ def create_compressed_folder(output_path: str = None, filename: str = None, comp
     """
 
     return make_archive(base_name=output_path + filename, format=compression_type, base_dir=base_dir)
+
+
+def save_query(output_folder: str = None, bucket: str = None):
+    compressed_folder_path = create_compressed_folder(output_path=output_folder, filename="", base_dir=output_folder)
+    upload_folder_to_bucket(bucket, compressed_folder_path, compressed_folder_path)
