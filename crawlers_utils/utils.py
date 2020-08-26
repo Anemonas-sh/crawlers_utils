@@ -91,7 +91,7 @@ def create_compressed_folder(output_path: str = None, filename: str = None, comp
     return: function returns the full path where archived/compressed folder was placed
     """
 
-    return make_archive(base_name=output_path + filename, format=compression_type, base_dir=base_dir)
+    return make_archive(base_name=output_path + filename, format=compression_type, root_dir=base_dir)
 
 
 def save_query(output_folder: str = None, bucket: str = None):
