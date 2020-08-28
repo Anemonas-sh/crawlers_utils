@@ -50,8 +50,12 @@ def connect_to_storage(bucket_name):
 
 
 def upload_folder_to_bucket(bucket, local_path, bucket_path):
-    blob = bucket.blob(bucket_path)
-    blob.upload_from_filename(local_path)
+    try:
+        blob = bucket.blob(bucket_path)
+        blob.upload_from_filename(local_path)
+    except Exception as e:
+        print('An error ocurred on file upload', e)
+        pass
 
 
 def download_blob_from_bucket(bucket_name, bucket_path, source_name, path_to_save):
@@ -96,4 +100,5 @@ def create_compressed_folder(output_path: str = None, filename: str = None, comp
 
 def save_query(output_folder: str = None, bucket: str = None):
     compressed_folder_path = create_compressed_folder(output_path=output_folder, filename="", base_dir=output_folder)
-    upload_folder_to_bucket(bucket, compressed_folder_path, compressed_folder_path)
+    if bucket is not None:
+        upload_folder_to_bucket(bucket, compressed_folder_path, output_folder)
