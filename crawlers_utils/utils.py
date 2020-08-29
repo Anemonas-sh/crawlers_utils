@@ -6,13 +6,41 @@ import json
 from googleapiclient import discovery
 from google.cloud import storage
 from shutil import make_archive
-from datetime import datetime
+from datetime import datetime, timedelta
+from threading import Thread
 from .constants import date_format
+
+
+def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
+    out_dir = get_output_folder(start_date, end_date, out_dir)
+
+    start_date = fail_recovery(start_date, out_dir)
+
+    total_days = (end_date - start_date).days + 1
+    threads = []
+    for i in range(thread_count):
+        lo = start_date + timedelta(days=i * total_days // thread_count + (i * total_days % thread_count != 0))
+        hi = start_date + timedelta(days=(i + 1) * total_days // thread_count + ((i + 1) * total_days % thread_count != 0) - 1)
+        t = Thread(target=init_crawler_func, args=(lo, hi, out_dir,), daemon=True)
+        t.start()
+        threads += [t]
+    for t in threads:
+        t.join()
+
+
+def fail_recovery(start_date, out_dir):
+    try:
+        while (start_date.strftime(date_format) + ".json") in os.listdir(out_dir):
+            start_date += timedelta(days=1)
+    except Exception as e:
+        print("Fail recovery failed", e)
+    print("Starting from", start_date.strftime(date_format))
+    return start_date
 
 
 def get_args():
     arguments = sys.argv
-    start_date, end_date, debug = None, None, False
+    start_date, end_date, debug, thread_count = None, None, False, 1
     try:
         for i in range(len(arguments)):
             if arguments[i] == "--start-date":
@@ -21,17 +49,27 @@ def get_args():
                 end_date = datetime.strptime(arguments[i + 1], "%m-%d-%Y")
             if arguments[i] == "--debug":
                 debug = True
+            if arguments[i] == "--threads":
+                thread_count = int(arguments[i + 1])
         if start_date is None or end_date is None:
             raise ValueError(start_date, end_date)
     except Exception as e:
         print("Couldn't get arguments", e)
         exit(0)
-    return start_date, end_date, debug
+    return start_date, end_date, debug, thread_count
 
 
 def get_output_folder(start_date, end_date, crawler_name):
     now, start, end = datetime.now().strftime(date_format), start_date.strftime(date_format), end_date.strftime(date_format)
-    return posixpath.join(crawler_name, "%s_%s_%s" % (now, start, end))
+    out_dir = posixpath.join(crawler_name, "%s_%s_%s" % (now, start, end))
+
+    try:
+        os.makedirs(out_dir) # makes sure that queries folder will exist
+    except Exception as e:
+        print(e)
+        pass
+
+    return out_dir
 
 
 def save_file(file_path, data, bucket=None):
