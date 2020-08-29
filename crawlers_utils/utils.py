@@ -27,6 +27,9 @@ def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
     for t in threads:
         t.join()
 
+    bucket = connect_to_storage("toureyes-data-lake")
+    save_query(out_dir, bucket=bucket)
+
 
 def fail_recovery(start_date, out_dir):
     try:
