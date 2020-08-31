@@ -7,7 +7,7 @@ from googleapiclient import discovery
 from google.cloud import storage
 from shutil import make_archive
 from datetime import datetime
-from .constants import date_format
+from constants import date_format
 
 
 def get_args():
@@ -54,27 +54,28 @@ def upload_folder_to_bucket(bucket, local_path, bucket_path):
     blob.upload_from_filename(local_path)
 
 
-def download_blob_from_bucket(bucket_name, bucket_path, source_name, path_to_save):
+def download_blob_from_bucket(bucket_name, source_path, path_to_save):
     """ Download blob from Storage bucket
 
     Parameters:
     bucket_name (str): Storage bucket name which will access. e.g.: "toureyes-data-lake"
-    bucket_path (str): Path inside Google Storage bucket where your blob is find. e.g.:
-    source_folder_name (str): Blob name to download from full storage path
+    source_path (str): Blob name to download from full storage path
     path_to_save (str): Full local path to download blob
 
     Returns:
     Nothing
     """
 
-    bucket = connect_to_storage(bucket_name=bucket_name)
-    blob = bucket.blob(bucket_path + "/" + source_name)
-    print("Downloading: {}".format(bucket_path + "/" + source_name))
-    blob.download_to_filename(path_to_save + "/" + source_name)
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(source_path)
+    assert blob.exists()
+    print("Downloading: {}".format(source_path))
+    blob.download_to_filename(path_to_save)
 
     print(
         "Blob {} downloaded to {}.".format(
-            source_name, path_to_save
+            source_path, path_to_save
         )
     )
 
@@ -87,8 +88,9 @@ def create_compressed_folder(output_path: str = None, filename: str = None, comp
                                 “gztar” (if the zlib module is available),
                                 “bztar” (if the bz2 module is available), or
                                 “xztar"
-
-    return: function returns the full path where archived/compressed folder was placed
+                                
+    Returns:
+    (str): Returns the full path where archived/compressed folder was placed
     """
 
     return make_archive(base_name=output_path + filename, format=compression_type, base_dir=base_dir)
