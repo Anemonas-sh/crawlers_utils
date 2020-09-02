@@ -115,7 +115,7 @@ def upload_folder_to_bucket(bucket, local_path, bucket_path):
         pass
 
 
-def download_blob_from_bucket(bucket_name, source_path, path_to_save):
+def download_blob_from_bucket(storage_client = None, bucket_name, source_path, path_to_save):
     """ Download blob from Storage bucket
 
     Parameters:
@@ -127,7 +127,6 @@ def download_blob_from_bucket(bucket_name, source_path, path_to_save):
     Nothing
     """
 
-    storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(source_path)
     assert blob.exists()
