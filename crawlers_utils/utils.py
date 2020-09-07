@@ -115,7 +115,7 @@ def upload_folder_to_bucket(bucket, local_path, bucket_path):
         pass
 
 
-def download_blob_from_bucket(storage_client = None, bucket_name, source_path, path_to_save):
+def download_blob_from_bucket(storage_client, bucket_name, source_path, path_to_save):
     """ Download blob from Storage bucket
 
     Parameters:
