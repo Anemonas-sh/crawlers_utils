@@ -15,16 +15,16 @@ from .constants import date_format
 def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
     out_dir = get_output_folder(start_date, end_date, out_dir)
 
-    start_date = fail_recovery(start_date, out_dir)
+    query_dates = fail_recovery(start_date, end_date, out_dir)
 
-    total_days = (end_date - start_date).days + 1
+    total_days = len(query_dates)
     thread_count = min(thread_count, total_days)
 
     threads = []
+    days_per_thread = total_days // thread_count + (total_days % thread_count != 0)
     for i in range(thread_count):
-        lo = start_date + timedelta(days=i * total_days // thread_count + (i * total_days % thread_count != 0))
-        hi = start_date + timedelta(days=(i + 1) * total_days // thread_count + ((i + 1) * total_days % thread_count != 0) - 1)
-        t = Thread(target=init_crawler_func, args=(lo, hi, out_dir,), daemon=True)
+        thread_query_range = query_dates[i * days_per_thread : (i + 1) * days_per_thread if i < thread_count - 1 else len(query_dates)]
+        t = Thread(target=init_crawler_func, args=(thread_query_range, out_dir,), daemon=True)
         t.start()
         threads += [t]
     for t in threads:
@@ -34,14 +34,17 @@ def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
     save_query(out_dir, bucket=bucket)
 
 
-def fail_recovery(start_date, out_dir):
+def fail_recovery(start_date, end_date, out_dir):
+    query_dates = []
     try:
-        while (start_date.strftime(date_format) + ".json") in os.listdir(out_dir):
+        while start_date <= end_date:
+            if not (start_date.strftime(date_format) + ".json") in os.listdir(out_dir):
+                query_dates += [start_date]
             start_date += timedelta(days=1)
     except Exception as e:
         print("Fail recovery failed", e)
-    print("Starting from", start_date.strftime(date_format))
-    return start_date
+    print("Query dates:", query_dates)
+    return query_dates
 
 
 def get_args():
