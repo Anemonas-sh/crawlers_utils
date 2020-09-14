@@ -9,29 +9,37 @@ from shutil import make_archive
 from datetime import datetime, timedelta
 from time import time
 from threading import Thread
-from .constants import date_format
+from .constants import date_format, date_time_format
+from .atomic_counter import AtomicCounter
+from queue import Queue
 
 
 def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
+    start_time = time()
+
     out_dir = get_output_folder(start_date, end_date, out_dir)
 
     query_dates = fail_recovery(start_date, end_date, out_dir)
+    query_queue = Queue()
+    for query_date in query_dates:
+        query_queue.put(query_date)
 
-    total_days = len(query_dates)
-    thread_count = min(thread_count, total_days)
+    atomic_counter = AtomicCounter(0)
+    # bucket = connect_to_storage("toureyes-data-lake")
+    bucket = None
 
     threads = []
-    days_per_thread = total_days // thread_count + (total_days % thread_count != 0)
-    for i in range(thread_count):
-        thread_query_range = query_dates[i * days_per_thread : (i + 1) * days_per_thread if i < thread_count - 1 else len(query_dates)]
-        t = Thread(target=init_crawler_func, args=(thread_query_range, out_dir,), daemon=True)
+    for _ in range(thread_count):
+        t = Thread(target=init_crawler_func, args=(query_queue, out_dir, atomic_counter, len(query_dates), bucket), daemon=True)
         t.start()
         threads += [t]
     for t in threads:
         t.join()
 
-    bucket = connect_to_storage("toureyes-data-lake")
     save_query(out_dir, bucket=bucket)
+
+    elapsed_time = time() - start_time
+    print("Took %d hours, %d minutes and %d seconds" % (elapsed_time // 3600, elapsed_time % 3600 // 60, elapsed_time % 60))
 
 
 def fail_recovery(start_date, end_date, out_dir):
@@ -43,7 +51,12 @@ def fail_recovery(start_date, end_date, out_dir):
             start_date += timedelta(days=1)
     except Exception as e:
         print("Fail recovery failed", e)
-    print("Query dates:", query_dates)
+
+    query_dates_string = []
+    for i in range(len(query_dates)):
+        query_dates_string += [query_dates[i].strftime(date_format)]
+    print("Query dates:", ", ".join(query_dates_string))
+
     return query_dates
 
 
@@ -89,8 +102,8 @@ def print_end_estimate(start_time, index, total, start_date_time, tabs, estimate
     estimate = int((time() - start_time) / index * (total - index))
     print("%s%d of %d (started at: %s, estimated to end at: %s) (%d hours, %d minutes and %d seconds)"
           % ("\t" * tabs, index, total,
-             start_date_time.strftime(date_format),
-             (start_date_time + timedelta(seconds=estimate)).strftime(date_format),
+             start_date_time.strftime(date_time_format),
+             (start_date_time + timedelta(seconds=estimate)).strftime(date_time_format),
              estimate // 3600, estimate % 3600 // 60, estimate % 60), sep="")
 
 
