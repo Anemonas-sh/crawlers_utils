@@ -25,8 +25,7 @@ def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
         query_queue.put(query_date)
 
     atomic_counter = AtomicCounter(0)
-    # bucket = connect_to_storage("toureyes-data-lake")
-    bucket = None
+    bucket = connect_to_storage("toureyes-data-lake")
 
     threads = []
     for _ in range(thread_count):
