@@ -102,7 +102,7 @@ def print_end_estimate(start_time, index, total, start_date_time, tabs, estimate
     print("%s%d of %d (started at: %s, estimated to end at: %s) (%d hours, %d minutes and %d seconds)"
           % ("\t" * tabs, index, total,
              start_date_time.strftime(date_time_format),
-             (start_date_time + timedelta(seconds=estimate)).strftime(date_time_format),
+             (datetime.now() + timedelta(seconds=estimate)).strftime(date_time_format),
              estimate // 3600, estimate % 3600 // 60, estimate % 60), sep="")
 
 
