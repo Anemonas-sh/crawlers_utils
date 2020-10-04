@@ -11,10 +11,16 @@ from time import time
 from threading import Thread
 from .constants import date_format, date_time_format
 from .atomic_counter import AtomicCounter
+from pyvirtualdisplay import Display
 from queue import Queue
+ON_WINDOWS = os.name == "nt"
 
 
 def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
+    if not ON_WINDOWS:
+        display = Display(visible=0, size=(1920, 1080))
+        display.start() # emulates a virtual screen to run Chrome Headless without --headless option
+
     start_time = time()
 
     out_dir = get_output_folder(start_date, end_date, out_dir)
@@ -34,6 +40,9 @@ def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
         threads += [t]
     for t in threads:
         t.join()
+
+    if not ON_WINDOWS:
+        display.stop()
 
     save_query(out_dir, bucket=bucket)
 
