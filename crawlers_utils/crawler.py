@@ -12,7 +12,7 @@ DELAY_TO_LOAD_FULL_PAGE = 3
 QUERIES_UNTIL_DRIVER_RESET = 1 # prevents memory leak
 
 default_chrome_options = Options()
-default_chrome_options.add_extension("/home/azureuser/crawlers_utils/RequestBlocker.crx")
+default_chrome_options.add_extension("../RequestBlocker/RequestBlocker.crx")
 # default_chrome_options.add_argument('headless')
 default_chrome_options.add_argument('no-sandbox')
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4166.0 Safari/537.36 Edg/85.0.545.0"
