@@ -164,6 +164,13 @@ def download_blob_from_bucket(storage_client, bucket_name, source_path, path_to_
     )
 
 
+def delete_folder_from_bucket(bucket, bucket_folder_path):
+    blobs = bucket.list_blobs(prefix=bucket_folder_path)
+    for blob in blobs:
+        if not blob.name.endswith('.zip'):
+            blob.delete()
+
+
 def create_compressed_folder(output_path: str = None, filename: str = None, compression_type="zip", base_dir: str = None):
     """
     base_dir: is the directory where we start archiving from
@@ -183,4 +190,5 @@ def create_compressed_folder(output_path: str = None, filename: str = None, comp
 def save_query(output_folder: str = None, bucket: str = None):
     compressed_folder_path = create_compressed_folder(output_path=output_folder, filename="", base_dir=output_folder)
     if bucket is not None:
-        upload_folder_to_bucket(bucket, compressed_folder_path, output_folder)
+        upload_folder_to_bucket(bucket, compressed_folder_path, output_folder + '.zip')
+        delete_folder_from_bucket(bucket, output_folder)
