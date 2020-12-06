@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='crawlers_utils',
-    version='1.0.0',
+    version='1.0.1',
     description='Datatour crawlers utils library',
     packages=find_packages(),
     include_package_data=True,
