@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from .constants import date_format, date_time_format
-from .utils import save_file, print_end_estimate
+from .utils import save_file, print_end_estimate, get_file_name
 
 DELAY_TO_LOAD_FULL_PAGE = 3
 QUERIES_UNTIL_DRIVER_RESET = 1 # prevents memory leak
@@ -21,7 +21,7 @@ default_chrome_options.add_argument("log-level=3")
 default_chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
 class Crawler:
-    def __init__(self, query_queue, output_folder, atomic_counter, query_size, bucket, debug=False, estimate_level=2, chrome_options=Options()):
+    def __init__(self, query_queue, output_folder, atomic_counter, query_size, bucket, debug=False, estimate_level=2, chrome_options=Options(), save_on_root: bool = False):
         self.query_queue = query_queue
         self.output_folder = output_folder
         self.atomic_counter = atomic_counter
@@ -33,6 +33,7 @@ class Crawler:
 
         self.debug = debug
         self.estimate_level = estimate_level
+        self.save_on_root = save_on_root
 
 
     def init_driver(self):
@@ -83,7 +84,8 @@ class Crawler:
                     print("Couldn't get data at %s |" % current_day.strftime("%d-%m-%Y"), e)
                     pass
 
-            query_file = posixpath.join(self.output_folder, current_day.strftime(date_format) + ".json")
+
+            query_file = posixpath.join(self.output_folder, get_file_name(script_date_time, current_day, self.save_on_root))
             save_file(query_file, data, bucket=self.bucket)
 
             self.atomic_counter.increment()

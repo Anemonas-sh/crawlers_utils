@@ -16,22 +16,24 @@ from queue import Queue
 ON_WINDOWS = os.name == "nt"
 
 
-def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
+def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func, save_on_root: bool = False):
+    display: Display = None
     if not ON_WINDOWS:
         display = Display(visible=0, size=(1920, 1080))
         display.start() # emulates a virtual screen to run Chrome Headless without --headless option
 
     start_time = time()
 
-    out_dir = get_output_folder(start_date, end_date, out_dir)
+    out_dir = get_output_folder(start_date, end_date, out_dir, save_on_root)
 
-    query_dates = fail_recovery(start_date, end_date, out_dir)
+    query_dates = fail_recovery(start_date, end_date, out_dir, save_on_root)
     query_queue = Queue()
     for query_date in query_dates:
         query_queue.put(query_date)
 
     atomic_counter = AtomicCounter(0)
-    bucket = connect_to_storage("toureyes-data-lake")
+    # bucket = connect_to_storage("toureyes-data-lake")
+    bucket = None
 
     threads = []
     for _ in range(thread_count):
@@ -44,19 +46,29 @@ def run_crawler(start_date, end_date, out_dir, thread_count, init_crawler_func):
     if not ON_WINDOWS:
         display.stop()
 
-    save_query(out_dir, bucket=bucket)
+    if not save_on_root:
+        save_query(out_dir, bucket=bucket)
 
     elapsed_time = time() - start_time
     print("Took %d hours, %d minutes and %d seconds" % (elapsed_time // 3600, elapsed_time % 3600 // 60, elapsed_time % 60))
 
 
-def fail_recovery(start_date, end_date, out_dir):
+def get_file_name(script_start_date: datetime, current_day: datetime, save_on_root: bool):
+    if save_on_root:
+        return "%s_%s.json" % (script_start_date.strftime(date_format), current_day.strftime(date_format))
+    else:
+        return "%s.json" % current_day.strftime(date_format)
+
+
+def fail_recovery(start_date, end_date, out_dir, save_on_root: bool = False):
+    script_start_date = datetime.now()
     query_dates = []
     try:
-        while start_date <= end_date:
-            if not (start_date.strftime(date_format) + ".json") in os.listdir(out_dir):
-                query_dates += [start_date]
-            start_date += timedelta(days=1)
+        current_day = start_date
+        while current_day <= end_date:
+            if not get_file_name(script_start_date, current_day, save_on_root) in os.listdir(out_dir):
+                query_dates += [current_day]
+            current_day += timedelta(days=1)
     except Exception as e:
         print("Fail recovery failed", e)
 
@@ -91,9 +103,12 @@ def get_args():
     return start_date, end_date, debug, thread_count, estimate_level
 
 
-def get_output_folder(start_date, end_date, crawler_name):
-    now, start, end = datetime.now().strftime(date_format), start_date.strftime(date_format), end_date.strftime(date_format)
-    out_dir = posixpath.join(crawler_name, "%s_%s_%s" % (now, start, end))
+def get_output_folder(start_date: datetime, end_date: datetime, crawler_name, save_on_root: bool = False):
+    if save_on_root:
+        out_dir = crawler_name
+    else:
+        now, start, end = datetime.now().strftime(date_format), start_date.strftime(date_format), end_date.strftime(date_format)
+        out_dir = posixpath.join(crawler_name, "%s_%s_%s" % (now, start, end))
 
     try:
         os.makedirs(out_dir) # makes sure that queries folder will exist
